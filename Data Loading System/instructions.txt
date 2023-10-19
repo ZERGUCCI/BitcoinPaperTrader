@@ -1,0 +1,4 @@
+1. Create a new Python script named `trading_system.py` where the trading system's core functionality will reside. This script will include functions for data loading, trading logic, and performance analysis.
+2. Create a function named load_historical_data() to read and parse price data from a txt file.
+3. Implement error handling in `load_historical_data`.
+4. Write test function to make sure data is being loaded correctly
