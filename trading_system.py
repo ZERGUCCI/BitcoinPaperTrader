@@ -32,4 +32,4 @@ def test_data_loading(data):
 
 file_path = "HistoricalBTCdata.txt"
 historical_data = load_historical_data(file_path)
-test_data_loading(historical_data)
+

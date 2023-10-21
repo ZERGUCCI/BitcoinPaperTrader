@@ -1,0 +1,6 @@
+1. Modify trading_system.py and write a function called user_settings. This function will take in user input of wallet size (in dollars), 
+as well as the start time, end time, and data point time interval to run the backtesting on then modify the loaded historical data
+to fit the users specifications and return the adjusted data.
+2. Write input validation to make sure the users time frame is between the total date range of the historical data as well as handle invalid inputs. 
+If the input is invalid, prompt the user as to why and ask for input again
+3. Write test functions to test user_settings and edge cases.
