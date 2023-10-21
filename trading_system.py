@@ -5,12 +5,6 @@ import pytz
 
 
 def load_historical_data(file_path):
-    """
-    Load and parse historical trading data from a file.
-
-    :param file_path: Path to the historical data file.
-    :return: List of parsed data points.
-    """
     try:
         print("Loading Sim Data...")
         with open(file_path) as f:
@@ -32,56 +26,46 @@ def test_data_loading(data):
     print(f"{len(data)} number of entries loaded")
     print(data[0])
 
-def user_settings(historical_data):
+def get_user_input():
+    wallet = input("Please enter the starting size (in dollars) of the wallet you would like to simulate: ")
+    start_date = input("Enter the start date (mm-dd-yyyy): ")
+    end_date = input("Enter the end date (mm-dd-yyyy): ")
+    data_time_interval = input("Enter the time interval in seconds (minimum 60): ")
+    return wallet, start_date, end_date, data_time_interval
 
+
+def user_settings(wallet, start_date, end_date, data_time_interval, historical_data):
     first_timestamp = historical_data[0][0]
     last_timestamp = historical_data[-1][0]
 
-    earliest_date = datetime.utcfromtimestamp(first_timestamp).strftime('%m-%d-%Y')
-    latest_date = datetime.utcfromtimestamp(last_timestamp).strftime('%m-%d-%Y')
+    # Convert inputs and validate them
+    try:
+        wallet = float(wallet)
+        if wallet <= 0:
+            raise ValueError("Wallet size must be positive.")
 
-    while True:
-        try:
-            # Read in user inputs
-            wallet = float(input("Please enter the starting size (in dollars) of the wallet you would like to simulate: "))
-            if wallet <= 0:
-                print("Wallet size must be positive. Please try again.")
-                continue
+        # Time conversion stuff
+        utc_tz = pytz.utc
+        start_date_obj = datetime.strptime(start_date, '%m-%d-%Y')
+        end_date_obj = datetime.strptime(end_date, '%m-%d-%Y')
+        start_date_obj = utc_tz.localize(start_date_obj)
+        end_date_obj = utc_tz.localize(end_date_obj)
+        start_timestamp = int(start_date_obj.timestamp()) + 60
+        end_timestamp = int(end_date_obj.timestamp()) + 60
 
-            print(f"The earliest start date available is {earliest_date}.")
-            start_date = input("Enter the start date (mm-dd-yyyy): ")
+        data_time_interval = int(data_time_interval)
+        if data_time_interval < 60:
+            raise ValueError("Time interval must be at least 60 seconds.")
 
-            print(f"The latest end date available is {latest_date}.")
-            end_date = input("Enter the end date (mm-dd-yyyy): ")
+        if not (first_timestamp <= start_timestamp <= last_timestamp) or not (first_timestamp <= end_timestamp <= last_timestamp):
+            raise ValueError("Start date and end date must be within the range of historical data.")
 
-            data_time_interval = int(input("Enter the time interval in seconds (minimum 60): "))
+        if start_timestamp > end_timestamp:
+            raise ValueError("End date must be after the start date.")
 
-            # Time conversion stuff
-            utc_tz = pytz.utc
-            start_date_obj = datetime.strptime(start_date, '%m-%d-%Y')
-            end_date_obj = datetime.strptime(end_date, '%m-%d-%Y')
-            start_date_obj = utc_tz.localize(start_date_obj)
-            end_date_obj = utc_tz.localize(end_date_obj)
-            start_timestamp = int(start_date_obj.timestamp()) + 60
-            end_timestamp = int(end_date_obj.timestamp()) + 60
-
-            # Input validation
-            if data_time_interval < 60:
-                print("Time interval must be at least 60 seconds. Please try again.")
-                continue
-
-            if not (first_timestamp <= start_timestamp <= last_timestamp) or not (first_timestamp <= end_timestamp <= last_timestamp):
-                print("Start date and end date must be within the range of historical data. Please try again.")
-                continue
-
-            if start_timestamp > end_timestamp:
-                print("End date must be after the start date. Please try again.")
-                continue
-
-            break  
-        except ValueError:
-            print("Invalid input. Please ensure you enter the correct values and formats.")
-
+    except ValueError as e:
+        print(f"Invalid input: {e}")
+        return None, None
 
     # Filter data between time range then adjust to data interval
     filtered_data = [data_point for data_point in historical_data if start_timestamp <= data_point[0] <= end_timestamp]
@@ -96,7 +80,19 @@ def user_settings(historical_data):
 
     return wallet, adjusted_data
 
-# Main execution starts here
-file_path = "HistoricalBTCdata.txt"
-historical_data = load_historical_data(file_path)
-wallet, adjusted_historical_data = user_settings(historical_data)
+if __name__ == "__main__":
+    file_path = "HistoricalBTCdata.txt"
+    historical_data = load_historical_data(file_path)
+
+    while True:
+        wallet, start_date, end_date, data_time_interval = get_user_input()
+
+        wallet, adjusted_historical_data = user_settings(wallet, start_date, end_date, data_time_interval, historical_data)
+
+        if wallet is not None and adjusted_historical_data is not None:
+            break
+        else:
+            print("Invalid input received. Please try again.")
+
+    print(f"wallet: {wallet}")
+    print(adjusted_historical_data)
