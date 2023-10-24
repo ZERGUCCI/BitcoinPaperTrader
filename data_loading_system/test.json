@@ -1,8 +1,0 @@
-[
-    {
-        "repo_url": "https://github.com/ZERGUCCI/BitcoinPaperTrader" ,
-        "objective": "Implement a function to read and handle historical price data",
-        "parent_commit": "d358b6c6af9f2c24d7a09534c159b4f59ba01a9e",
-        "test_script": "data_loading_system/test_file.py"
-    }
-]
