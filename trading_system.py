@@ -3,6 +3,80 @@ from datetime import datetime
 from datetime import timedelta
 import pytz
 
+class Wallet:
+    def __init__(self, initial_cash):
+        self.cash = initial_cash
+        self.stock = 0
+        self.transactions = []
+
+    def buy(self, timestamp, price, number):
+
+        # Input validation
+        if np.isnan(price) or price <= 0:
+            print(f"Price: {price} is invalid")
+            return False # Invalid price input
+        
+        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
+            print(f"Cannot go back in time")
+            return False  # Cannot buy before previous transaction.
+        
+        if price * number > self.cash:
+            print(f"Not enough cash to buy that number")
+            return False  # Not enough cash to buy
+
+        if number <= 0:
+            print(f"Cannot buy 0 or negative amount")
+            return False # Invalid number input
+        
+        # Update Wallet
+        self.cash -= price * number
+        self.stock += number
+        transaction = {
+            'type': 'buy', 
+            'price': price, 
+            'number': number, 
+            'timestamp': timestamp
+        }
+        self.transactions.append(transaction)
+
+        # Logging
+        print(transaction)
+        return True
+
+    def sell(self, timestamp, price, number):
+
+        # Input Validation
+        if np.isnan(price) or price <= 0:
+            print(f"Price: {price} is invalid")
+            return False # Invalid price input
+        
+        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
+            print(f"Cannot go back in time")
+            return False  # Cannot buy before previous transaction.
+        
+        if number > self.stock:
+            print(f"Not enough stock to sell")
+            return False  # Not enough stock to sell
+        
+        if number <= 0:
+            print(f"Cannot buy 0 or negative amount")
+            return False # Invalid number input
+
+        # Update Wallet
+        self.stock -= number
+        self.cash += price * number
+        transaction = {
+            'type': 'sell', 
+            'price': price, 
+            'number': number, 
+            'timestamp': timestamp
+        }
+        self.transactions.append(transaction)
+
+        # Logging
+        print(transaction)
+        return True
+
 
 def load_historical_data(file_path):
     try:
@@ -94,5 +168,5 @@ if __name__ == "__main__":
         else:
             print("Invalid input received. Please try again.")
 
-    print(f"wallet: {wallet}")
-    print(adjusted_historical_data)
+    
+    userWallet = Wallet(wallet)
