@@ -17,10 +17,10 @@ class TechnicalIndicators:
             return { 'open': open_, 'high': high, 'low': low, 'close': close }
 
         new_candle = {}
-        new_candle['open'] = (previous_candle['open'] + previous_candle['close']) / 2
-        new_candle['high'] = max(high, new_candle['open'], close)
-        new_candle['low'] = min(low, new_candle['open'], close)
         new_candle['close'] = (open_ + high + low + close) / 4
+        new_candle['open'] = (previous_candle['open'] + previous_candle['close']) / 2
+        new_candle['high'] = max(high, new_candle['open'], new_candle['close'])
+        new_candle['low'] = min(low, new_candle['open'], new_candle['close'])
 
         return new_candle
 
