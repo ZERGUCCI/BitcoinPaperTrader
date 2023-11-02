@@ -37,7 +37,7 @@ class Wallet:
             print(f"Price: {price} is invalid")
             return False
         
-        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
+        if self.transactions and timestamp < self.transactions[-1]['timestamp']:
             print(f"Cannot go back in time")
             return False 
         
@@ -97,8 +97,8 @@ class Wallet:
             print(f"Price: {price} is invalid")
             return False
 
-        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
-            print(f"Cannot go back in time")
+        if self.transactions and timestamp < self.transactions[-1]['timestamp']:
+            print(f"Cannot short back in time")
             return False
 
         if price * number > self.cash:
@@ -127,8 +127,8 @@ class Wallet:
             print(f"Price: {price} is invalid")
             return False 
 
-        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
-            print(f"Cannot go back in time")
+        if self.transactions and timestamp < self.transactions[-1]['timestamp']:
+            print(f"Cannot close short back in time")
             return False 
 
         if number > self.short_stock:
@@ -152,6 +152,38 @@ class Wallet:
         print(transaction)
         return True
 
+class SimpleMovingAverageStrategy:
+    def __init__(self, wallet, data, window_size):
+        self.wallet = wallet
+        self.data = data
+        self.window_size = window_size
+
+    def calculate_moving_average(self, data):
+        return sum(data) / len(data)
+
+    def execute(self):
+        bitcoin_prices = []
+
+        for data_point in self.data:
+            bitcoin_prices.append(data_point['close'])
+            if len(bitcoin_prices) > self.window_size:
+                bitcoin_prices.pop(0)
+            moving_average = self.calculate_moving_average(bitcoin_prices)
+
+            if data_point['close'] < moving_average and self.wallet.stock == 0:
+                self.wallet.close_short(data_point['timestamp'], data_point['close'], self.wallet.short_stock)
+                self.wallet.buy(data_point['timestamp'], data_point['close'], self.wallet.cash/data_point['close'])
+            elif data_point['close'] > moving_average and self.wallet.stock > 0:
+                self.wallet.sell(data_point['timestamp'], data_point['close'], self.wallet.stock)
+                self.wallet.short(data_point['timestamp'], data_point['close'], self.wallet.cash/data_point['close'])
+
+        # Closing remaining positions
+        last_data = self.data[-1]
+        if self.wallet.stock > 0:
+            self.wallet.sell(last_data['timestamp'], last_data['close'], self.wallet.stock)
+        if self.wallet.short_stock > 0:
+            self.wallet.close_short(last_data['timestamp'], last_data['close'], self.wallet.short_stock)
+    
 def load_historical_data(file_path):
     try:
         print("Loading Sim Data...")
@@ -236,6 +268,7 @@ def user_settings(wallet, start_date, end_date, data_time_interval, historical_d
     return wallet, adjusted_data
 
 
+
 if __name__ == "__main__":
     file_path = "HistoricalBTCdata.txt"
     historical_data = load_historical_data(file_path)
@@ -251,3 +284,10 @@ if __name__ == "__main__":
             print("Invalid input received. Please try again.")
 
     userWallet = Wallet(wallet)
+
+    # Calculate short term simple moving average strategy
+    sma_strategy = SimpleMovingAverageStrategy(userWallet, adjusted_historical_data, 5)
+    sma_strategy.execute()
+
+    print("Final wallet cash: ", userWallet.cash)
+    print("Final owed shorts: ", userWallet.short_stock)
