@@ -29,6 +29,7 @@ class Wallet:
     def __init__(self, initial_cash):
         self.cash = initial_cash
         self.stock = 0
+        self.short_stock = 0
         self.transactions = []
 
     def buy(self, timestamp, price, number):
@@ -91,6 +92,65 @@ class Wallet:
         print(transaction)
         return True
 
+    def short(self, timestamp, price, number):
+        if np.isnan(price) or price <= 0:
+            print(f"Price: {price} is invalid")
+            return False
+
+        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
+            print(f"Cannot go back in time")
+            return False
+
+        if price * number > self.cash:
+            print(f"Not enough cash to short that number")
+            return False
+
+        if number <= 0:
+            print(f"Cannot short 0 or negative amount")
+            return False
+
+        self.cash += price * number
+        self.short_stock += number
+        transaction = {
+            'type': 'short',
+            'price': price,
+            'number': number,
+            'timestamp': timestamp
+        }
+        self.transactions.append(transaction)
+
+        print(transaction)
+        return True
+
+    def close_short(self, timestamp, price, number):
+        if np.isnan(price) or price <= 0:
+            print(f"Price: {price} is invalid")
+            return False 
+
+        if self.transactions and timestamp <= self.transactions[-1]['timestamp']:
+            print(f"Cannot go back in time")
+            return False 
+
+        if number > self.short_stock:
+            print(f"Not enough shorted Bitcoin to close")
+            return False 
+
+        if number <= 0:
+            print(f"Cannot close 0 or negative amount")
+            return False 
+
+        self.short_stock -= number
+        self.cash -= price * number
+        transaction = {
+            'type': 'close_short',
+            'price': price,
+            'number': number,
+            'timestamp': timestamp
+        }
+        self.transactions.append(transaction)
+
+        print(transaction)
+        return True
 
 def load_historical_data(file_path):
     try:
