@@ -32,6 +32,70 @@ class Wallet:
         self.short_stock = 0
         self.transactions = []
 
+    def totalProfits(self, initial_wallet, final_wallet):
+        net = final_wallet - initial_wallet
+        percentage = net * 100/initial_wallet
+        return net, percentage
+    
+    def totalClosedTrades(self):
+        total_trades = 0
+
+        for i in range(1, len(self.transactions)):
+            current_transaction = self.transactions[i]
+
+            if current_transaction['type'] in ['sell', 'close_short']:    
+                total_trades += 1
+        
+        return total_trades
+
+    def percentProfitable(self):
+        profitable_trades = 0
+        total_trades = 0
+        for i in range(1, len(self.transactions)):
+            current_transaction = self.transactions[i]
+            previous_transaction = self.transactions[i - 1]
+
+            if current_transaction['type'] in ['sell'] and previous_transaction['type'] in ['buy']:
+                # Determine if trade was profitable
+                if current_transaction['price'] * current_transaction['number'] > previous_transaction['price'] * previous_transaction['number']:
+                    profitable_trades += 1
+
+                total_trades += 1
+            else:
+                if current_transaction['type'] in ['close_short'] and previous_transaction['type'] in ['short']:
+                    if current_transaction['price'] * current_transaction['number'] < previous_transaction['price'] * previous_transaction['number']:
+                        profitable_trades += 1
+                    
+                    total_trades += 1
+
+        return 100 * profitable_trades/total_trades
+    
+    def profitFactor(self):
+        total_profit = 0
+        total_loss = 0
+        for i in range(1, len(self.transactions)):
+            current_transaction = self.transactions[i]
+            previous_transaction = self.transactions[i - 1]
+
+            if current_transaction['type'] in ['sell'] and previous_transaction['type'] in ['buy']:
+                profit = (current_transaction['price'] * current_transaction['number']) - (previous_transaction['price'] * previous_transaction['number'])
+                if profit > 0:
+                    total_profit += profit
+                else:
+                    total_loss -= profit  
+
+            elif current_transaction['type'] in ['close_short'] and previous_transaction['type'] in ['short']:
+                profit = (previous_transaction['price'] * previous_transaction['number']) - (current_transaction['price'] * current_transaction['number'])
+                if profit > 0:
+                    total_profit += profit
+                else:
+                    total_loss -= profit 
+
+        if total_loss == 0:
+            return float('inf')
+        else:
+            return total_profit / total_loss
+    
     def buy(self, timestamp, price, number):
         if np.isnan(price) or price <= 0:
             print(f"Price: {price} is invalid")
@@ -284,10 +348,17 @@ if __name__ == "__main__":
             print("Invalid input received. Please try again.")
 
     userWallet = Wallet(wallet)
-
+    initialCash = userWallet.cash
     # Calculate short term simple moving average strategy
     sma_strategy = SimpleMovingAverageStrategy(userWallet, adjusted_historical_data, 5)
     sma_strategy.execute()
+    net, percentage = userWallet.totalProfits(initialCash, userWallet.cash)
 
     print("Final wallet cash: ", userWallet.cash)
+    print("Net Profit: ", net)
+    print("Profit Percentage: ", percentage)
     print("Final owed shorts: ", userWallet.short_stock)
+    print("Percentage profitable: ", userWallet.percentProfitable()) 
+    print("Total number of closed trades: ", userWallet.totalClosedTrades())
+    print("Profit factor: ", userWallet.profitFactor())
+    
