@@ -23,6 +23,18 @@ class TechnicalIndicators:
         new_candle['low'] = min(low, new_candle['open'], new_candle['close'])
 
         return new_candle
+    
+    # Method to calculate EMA (exponential moving average)
+    @staticmethod
+    def exponential_moving_average(data, window):
+        if len(data) < window:
+            raise ValueError("Data is too short")
+        c = 2.0 / (window + 1)
+        current_ema = sum(data_point['close'] for data_point in data[:window]) / window
+
+        for data_point in data[window:]:
+            current_ema = (c * data_point['close']) + ((1 - c) * current_ema)
+        return current_ema
 
 
 class Wallet:
